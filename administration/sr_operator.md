@@ -1,15 +1,6 @@
-# 在 Kubernetes 上部署 StarRocks 集群
+# 在 Kubernetes 上通过 StarRocks Operator 部署和管理 StarRocks 集群
 
 本文介绍如何在 Kubernetes 集群上通过 StarRocks Operator 自动化部署和管理 StarRocks 集群。
-
-## **基本概念**
-
-| 概念         | 解释                                                         |
-| ------------ | ------------------------------------------------------------ |
-| Kubernetes   | 开源的容器编排引擎，自动化部署、 扩缩和管理容器化应用的调度系统。Kubernetes 集群由控制平面的组件和一个或多个 Node 组成。 |
-| 控制平面组件 | 为 Kubernetes 集群做出全局决策，比如调度资源，以及检测和响应集群事件，例如 Pod 不可用时，启动新的 Pod。主要组件如下：<ul><li>[API Sever](https://kubernetes.io/zh-cn/docs/reference/command-line-tools-reference/kube-apiserver/)：控制平面的核心和前端。API Server 公开了 API，供集群中的内部组件相互通信，处理外部用户请求。API Server 是集群内部组件用于数据交互和通信的中心枢纽，并且只有 API Server 才能够直接查询和修改存储集群资源对象状态的后台数据库 etcd。</li><li>[Controller Manager](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-controller-manager/)：资源对象的控制中心，确保资源对象处于期望状态，内置多个 Controller 负责不同资源。Controller 通过 API Server 监听资源对象的当前状态，并与期望状态比较，若不一致则进行调谐工作。除了内置 Controller，用户也可以定制 Controller，例如本文的 StarRocks Operator 是控制 StarRocks 集群资源对象的定制 Controller。</li><li>[Scheduler](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-scheduler/)：通过 API Server 监听未调度的 Pod 并调度到合适的 Node。</li><li>资源、对象、定制资源：Kubernetes 将所有内容抽象成资源，如 Node、Stateful、Deployment。对象是资源的实例，是持久化的实体，如某个具体的 Node、StatefulSet、Deployment。Kubernetes 用这些实体表示整个集群的状态。除了内置资源，用户可以定制资源，例如本文使用的定制资源 StarRocksCluster。</li></ul>|
-| Node         | Kubernetes 集群中资源的实际供给方，是调度 Pod 运行的场所。在生产环境中，一个 Kubernetes 集群通常包含多个 Node，由控制平面管理。 |
-| Pod          | Kubernetes 集群中创建、管理、可部署的最小计算单元。Pod 是一组（一个或多个）[容器](https://kubernetes.io/zh-cn/docs/concepts/overview/what-is-kubernetes/#why-containers)， 这些容器共享存储、网络、以及怎样运行这些容器的声明。本文中一个 Pod 中运行一个容器化的 FE 或者 BE 或者 CN。 |
 
 ## 工作原理
 
@@ -33,11 +24,11 @@
 
 **创建  GKE 集群**
 
-创建前，请确保已经完成所有前置工作。创建步骤，请参考[创建 GKE 集群](https://cloud.google.com/kubernetes-engine/docs/deploy-app-cluster)。
+创建前，请确保已经完成所有[前置工作](https://cloud.google.com/kubernetes-engine/docs/deploy-app-cluster#before-you-begin)。创建步骤，请参考[创建 GKE 集群](https://cloud.google.com/kubernetes-engine/docs/deploy-app-cluster)。
 
 **创建私有 Kubernetes 集群**
 
-创建 [Kubernetes 集群](https://kubernetes.io/zh-cn/docs/setup/production-environment/tools/kubeadm/)。如需快速体验本特性，则可以使用 [Minikube](https://kubernetes.io/zh-cn/docs/tutorials/kubernetes-basics/create-cluster/cluster-intro/) 创建单节点 Kubernetes 集群。
+创建 [私有 Kubernetes 集群](https://kubernetes.io/zh-cn/docs/setup/production-environment/tools/kubeadm/)。如需快速体验本特性，则可以使用 [Minikube](https://kubernetes.io/zh-cn/docs/tutorials/kubernetes-basics/create-cluster/cluster-intro/) 和 [Docker Desktop](https://docs.docker.com/desktop/) 创建单节点 Kubernetes 集群。
 
 ### 部署 StarRocks Operator
 
@@ -123,16 +114,18 @@ starrockscluster-sample-fe-2          1/1     Running   0          22h
 >
 > 如果部分 Pod 长时间仍无法启动，您可以通过 `kubectl logs -n starrocks <pod_name>` 查看日志信息或者通过 `kubectl -n starrocks describe pod <pod_name>` 查看 Event 信息，以定位问题。
 
-## 访问 StarRocks 集群
+## 管理 StarRocks 集群
+
+### 访问 StarRocks 集群
 
 访问 StarRocks 集群的各个组件可以通过其关联的 Service 实现，比如 FE Service。Service 的详细说明和访问地址查看，请参考 [api.md](https://github.com/StarRocks/starrocks-kubernetes-operator/blob/main/doc/api.md) 和 [Service](https://kubernetes.io/docs/concepts/services-networking/service/)。
 
 > **说明**
 >
-> - 默认情况下，仅部署 FE Service。如需部署 BE Service 和 CN Service，则您需要在 StarRocks 集群配置文件 `starRocksBeSpec`、`starRocksCnSpec` 中增加配置。
+> - 默认情况下，仅部署 FE Service。如需部署 BE Service 和 CN Service，则您需要在 StarRocks 集群配置文件中的 `starRocksBeSpec`、`starRocksCnSpec` 增加配置。
 > - Service 的名称默认为 `<集群名称>-<组件名称>-service`，例如 `starrockscluster-sample-fe-service`，您也可以在每个组件的 spec 中进行指定 Service 名称。
 
-### 集群内访问 StarRocks 集群
+#### 集群内访问 StarRocks 集群
 
 在 Kubernetes 集群内，通过 FE Service 的 ClusterIP 访问 StarRocks 集群。
 
@@ -152,7 +145,7 @@ starrockscluster-sample-fe-2          1/1     Running   0          22h
     mysql -h 10.100.162.xxx -P 9030 -uroot
     ```
 
-### 集群外访问 StarRocks 集群
+#### 集群外访问 StarRocks 集群
 
 在 Kubernetes 集群外，支持通过 FE Service 的 LoadBalancer 和 NodePort 访问 StarRocks 集群。本文以 LoadBalancer 为例：
 
@@ -185,13 +178,9 @@ starrockscluster-sample-fe-2          1/1     Running   0          22h
     mysql -h a7509284bf3784983a596c6eec7fc212-618xxxxxx.us-west-2.elb.amazonaws.com -P9030 -uroot
     ```
 
-## 管理 StarRocks 集群
-
-您可以执行命令 `kubectl edit` 或者 `kubectl patch` 更新 StarRocks 集群配置文件，来管理 StarRocks 集群。
-
 ### 升级 StarRocks 集群
 
-**升级 BE 节点**
+#### 升级 BE 节点
 
 执行如下命令，指定新的 BE 镜像文件，例如 `starrocks/be-ubuntu:2.5.0-fix-uid`。
 
@@ -199,7 +188,7 @@ starrockscluster-sample-fe-2          1/1     Running   0          22h
 kubectl -n starrocks patch starrockscluster starrockscluster-sample --type='merge' -p '{"spec":{"starRocksBeSpec":{"image":"starrocks/be-ubuntu:2.5.0-fix-uid"}}}'
 ```
 
-**升级 FE 节点**
+#### 升级 FE 节点
 
 执行如下命令，指定新的 FE 镜像文件，例如 `starrocks/fe-ubuntu:2.5.0-fix-uid`。
 
@@ -237,7 +226,7 @@ kubectl -n starrocks patch starrockscluster starrockscluster-sample --type='merg
 
 > **注意**
 >
-> 如果配置了 CN 自动扩缩容策略，则请删除 CN 的 `replicas` 字段。
+> 如果配置了 CN 自动扩缩容策略，则请删除 StarRocks 集群配置文件中`starRocksCnSpec` 的 `replicas` 字段。
 
 Kubernetes 还支持使用 `behavior`，根据业务场景定制扩缩容行为，实现快速扩容，缓慢缩容，禁用缩容等。更多自动扩容容策略的说明，请参见 [Pod 水平自动扩缩](https://kubernetes.io/zh-cn/docs/tasks/run-application/horizontal-pod-autoscale/)。
 
@@ -249,8 +238,7 @@ Kubernetes 还支持使用 `behavior`，根据业务场景定制扩缩容行为�
     requests:
       cpu: 4
       memory: 4Gi
-      #when you use autoscalingPolicy, it is recommended that replicas removed from manifests.
-    autoScalingPolicy: # auto-scaling policy of CN cluster
+    autoScalingPolicy: # CN 自动扩缩容策略
           maxReplicas: 10 # CN 数量的上限 10
           minReplicas: 1 # CN 数量的下限 1
           hpaPolicy:
