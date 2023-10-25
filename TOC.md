@@ -322,14 +322,12 @@
       + [Insert Into](/faq/loading/Insert_into_faq.md)
       + [Flink connector](/faq/loading/Flink_connector_faq.md)
       + [DataX](/faq/loading/DataX_faq.md)
-      + [CloudCanal 数据导入](/faq/loading/CloudCanal_load_faq.md)
     + [导出](/faq/Exporting_faq.md)
   + [SQL FAQ](/faq/Sql_faq.md)
   + [视频资源](/faq/Video.md)
   + [其他](/faq/Others.md)
 + 性能测试
   + [SSB 性能测试](/benchmarking/SSB_Benchmarking.md)
-  + [TPC-H 基准测试](/benchmarking/TPC-H_Benchmark.md)
 + Release Notes
   + [v1.19](/release_notes/release-1.19.md)
   + [v2.0](/release_notes/release-2.0.md)
