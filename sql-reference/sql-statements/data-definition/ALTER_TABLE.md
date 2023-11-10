@@ -309,7 +309,7 @@ MODIFY COLUMN column_name column_type [KEY | agg_type] [NULL | NOT NULL] [DEFAUL
 注意：
 
 1. 聚合模型如果修改 value 列，需要指定 agg_type。
-2. 非聚合类型如果修改 key 列，需要指定 KEY 关键字。
+2. 非聚合类型如果修改 key 列，该列不能为分桶键，且需要指定 KEY 关键字。
 3. 只能修改列的类型，列的其他属性维持原样（即其他属性需在语句中按照原属性显式的写出，参见样例中 [Schema Change](#schema-change-1) 部分第 8 个例子）。
 4. 分区列不能做任何修改。
 5. 目前支持以下类型的转换（精度损失由用户保证）：
